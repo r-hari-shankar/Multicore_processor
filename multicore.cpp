@@ -15,6 +15,7 @@ struct mips{
 	vector<map<string, int>> countOfInstructions;
 	vector<vector<string>> Instruction;
 	int N,M,rowDelay=10,columnDelay=2;
+	string tempi[10]={"add","sub","mul","addi","j","beq","bne","slt","lw","sw"}; 
 	void getregister()
 	{
 		string temp[]={"$zero","$at","$v0","$v1","$a0","$a1","$a2","$a3","$t0","$t1","$t2","$t3","$t4","$t5","$t6","$t7","$s0","$s1","$s2","$s3","$s4","$s5","$s6","$s7","$t8","$t9","$k0","$k1","$gp","$sp","$s8","$ra"}; 
@@ -25,7 +26,7 @@ struct mips{
 		return;
 	}
 	void begin(int N){
-		string tempi[10]={"add","sub","mul","addi","j","beq","bne","slt","lw","sw"}; 
+		
 		for(int j=0;j<N;j++){
 			map<string, int> countInstructions;
 			for(int i=0;i<10;i++ ){
@@ -82,6 +83,8 @@ struct mips{
 		    in.close();
 		    Instruction.push_back(v);
 		}
+		/*for (auto it = Instruction[0].begin(); it != Instruction[0].end(); it++)
+        cout << *it << " ";*/
 	}
 	bool isValidRegister(string str,bool modify){
 		if (getRegister.count(str) > 0)
@@ -101,7 +104,13 @@ struct mips{
 	    }
 	}
 	bool isValidInstruction(string str){
-		
+		for(int i=0;i<10;i++){
+			if(str.compare(tempi[i])==0){
+				return true;
+			}
+		}
+		cout<<"Invalid Instruction"<<"\n";
+		return false;
 	}
 	
 };
