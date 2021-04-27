@@ -76,8 +76,16 @@ struct mips{
 		        	leftTrim(str, chars_to_trim);
 		        	if(str[0]=='#')
 		        		continue;
-		        	else if(str[0]!='#')
-		            	v.push_back(str);
+		        	else if(str[0]!='#'){
+		        		replace(str.begin(), str.end(), ',', ' ');
+		        		stringstream ss(str);
+						string token;
+						while (getline(ss,token, ' '))
+						{
+						    v.push_back(token);
+						}
+		            	
+		        	}
 		        }
 		    }
 		    in.close();
