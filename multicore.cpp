@@ -73,12 +73,35 @@ struct mips{
 		    {
 		        if(str.size() > 0){
 		        	leftTrim(str, chars_to_trim);
-		            v.push_back(str);
+		        	if(str[0]=='#')
+		        		continue;
+		        	else if(str[0]!='#')
+		            	v.push_back(str);
 		        }
 		    }
 		    in.close();
 		    Instruction.push_back(v);
 		}
+	}
+	bool isValidRegister(string str,bool modify){
+		if (getRegister.count(str) > 0)
+	    {
+	        if(modify==true){
+	        	if(str.compare("$zero")==0 || str.compare("$at")==0){
+	        		cout<<"No permission to modify register"<<"\n";
+	        		return false;
+	        	}
+	        }
+	        return true; 
+	    }
+	    else
+	    {
+	        std::cout << "Invalid Register" << std::endl;
+	        return false;
+	    }
+	}
+	bool isValidInstruction(string str){
+		
 	}
 	
 };
