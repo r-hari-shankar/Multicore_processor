@@ -292,7 +292,7 @@ struct mips{
         else{
             registers[fileindex][reg1]=registers[fileindex][reg2]+reg3;
         }
-        cout<<registers[fileindex][reg1]<<"\n";
+        //cout<<registers[fileindex][reg1]<<"\n";
     }
     int bne(int fileindex,int ind){
         int reg1,reg2,reg3;
