@@ -118,7 +118,7 @@ struct mips{
         {
             if(modify==true){
                 if(str.compare("$zero")==0 || str.compare("$at")==0){
-                    cout<<"No permission to modify register"<<"\n";
+                    //cout<<"No permission to modify register"<<"\n";
                     return false;
                 }
             }
@@ -126,7 +126,7 @@ struct mips{
         }
         else
         {
-            std::cout << "Invalid Register: " << str << std::endl;
+            //std::cout << "Invalid Register: " << str << std::endl;
             return false;
         }
     }
@@ -137,7 +137,7 @@ struct mips{
                 return true;
             }
         }
-        cout<<"Invalid Instruction"<<"\n";
+        //cout<<"Invalid Instruction"<<"\n";
         return false;
     }
 
