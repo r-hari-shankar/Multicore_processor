@@ -70,8 +70,11 @@ struct mips{
         }
         getregister();
         begin(N);
+
         for(int i=0;i<N;i++){
             vector<string> v;
+            //int reg[32];
+            //registers.push_back(reg);
             std::ifstream in(files[i].c_str());
             if(!in)
             {
@@ -238,13 +241,155 @@ struct mips{
         }
         return 0;
     }
+    void add(int fileindex,int ind){
+        int reg1,reg2,reg3;
+        string s1=Instruction[fileindex][ind+1],s2=Instruction[fileindex][ind+2],s3=Instruction[fileindex][ind+3];
+        reg1=getRegister[s1];
+        reg2=getRegister[s2];
+        reg3=getRegister[s3];
+        if(not_safe(reg1,true) || not_safe(reg2,false) || not_safe(reg3,false)){
+            reduce_queue();
+        }
+        else{
+            registers[fileindex][reg1]=registers[fileindex][reg2]+registers[fileindex][reg3];
+        }
+    }
+    void sub(int fileindex,int ind){
+        int reg1,reg2,reg3;
+        string s1=Instruction[fileindex][ind+1],s2=Instruction[fileindex][ind+2],s3=Instruction[fileindex][ind+3];
+        reg1=getRegister[s1];
+        reg2=getRegister[s2];
+        reg3=getRegister[s3];
+        if(not_safe(reg1,true) || not_safe(reg2,false) || not_safe(reg3,false)){
+            reduce_queue();
+        }
+        else{
+            registers[fileindex][reg1]=registers[fileindex][reg2]-registers[fileindex][reg3];
+        }
+    }
+    void mul(int fileindex,int ind){
+        int reg1,reg2,reg3;
+        string s1=Instruction[fileindex][ind+1],s2=Instruction[fileindex][ind+2],s3=Instruction[fileindex][ind+3];
+        reg1=getRegister[s1];
+        reg2=getRegister[s2];
+        reg3=getRegister[s3];
+        if(not_safe(reg1,true) || not_safe(reg2,false) || not_safe(reg3,false)){
+            reduce_queue();
+        }
+        else{
+            registers[fileindex][reg1]=registers[fileindex][reg2]*registers[fileindex][reg3];
+        }
+    }
+    void addi(int fileindex,int ind){
+        int reg1,reg2,reg3;
+        string s1=Instruction[fileindex][ind+1],s2=Instruction[fileindex][ind+2],s3=Instruction[fileindex][ind+3];
+        reg1=getRegister[s1];
+        reg2=getRegister[s2];
+        reg3=stoi(s3);
+        if(not_safe(reg1,true) || not_safe(reg2,false)){
+            reduce_queue();
+        }
+        else{
+            registers[fileindex][reg1]=registers[fileindex][reg2]+reg3;
+        }
+        cout<<registers[fileindex][reg1]<<"\n";
+    }
+    int bne(int fileindex,int ind){
+        int reg1,reg2,reg3;
+        string s1=Instruction[fileindex][ind+1],s2=Instruction[fileindex][ind+2],s3=Instruction[fileindex][ind+3];
+        reg1=getRegister[s1];
+        reg2=getRegister[s2];
+        if(labels[fileindex].find(s3)==labels[fileindex].end()){
+            cout<<"Label not present"<<endl;
+            return -1;
+        }
+        else{
+            reg3=labels[fileindex][s3];
+        }
+        
+        if(not_safe(reg1,false) || not_safe(reg2,false) ){
+            reduce_queue();
+        }
+        else{
+            int a,b;
+            a=registers[fileindex][reg1];
+            b=registers[fileindex][reg2];
+            if(a!=b){
+                return reg3;
+            }
+            else{
+                return ind+4;
+            }
+        }
+    }
+    int beq(int fileindex,int ind){
+        int reg1,reg2,reg3;
+        string s1=Instruction[fileindex][ind+1],s2=Instruction[fileindex][ind+2],s3=Instruction[fileindex][ind+3];
+        reg1=getRegister[s1];
+        reg2=getRegister[s2];
+        if(labels[fileindex].find(s3)==labels[fileindex].end()){
+            cout<<"Label not present"<<endl;
+            return -1;
+        }
+        else{
+            reg3=labels[fileindex][s3];
+        }
+        if(not_safe(reg1,false) || not_safe(reg2,false) ){
+            reduce_queue();
+        }
+        else{
+            int a,b;
+            a=registers[fileindex][reg1];
+            b=registers[fileindex][reg2];
+            if(a==b){
+                return reg3;
+            }
+            else{
+                return ind+4;
+            }
+        }
+    }
+    int j(int fileindex,int ind){
+        int reg1,reg2;
+        string s1=Instruction[fileindex][ind+1],s2=Instruction[fileindex][ind+2];
+        reg1=getRegister[s1];
+        if(labels[fileindex].find(s2)==labels[fileindex].end()){
+            cout<<"Label not present"<<endl;
+            return -1;
+        }
+        else{
+            reg2=labels[fileindex][s2];
+        }
+        return reg2;
+    }
+    void slt(int fileindex,int ind){
+        int reg1,reg2,reg3;
+        string s1=Instruction[fileindex][ind+1],s2=Instruction[fileindex][ind+2],s3=Instruction[fileindex][ind+3];
+        reg1=getRegister[s1];
+        reg2=getRegister[s2];
+        reg3=getRegister[s3];
+        if(not_safe(reg1,true) || not_safe(reg2,false) || not_safe(reg3,false)){
+            reduce_queue();
+        }
+        else{
+            if(registers[fileindex][reg2]<registers[fileindex][reg3]){
+                registers[fileindex][reg1]=1;
+            }
+            else{
+                registers[fileindex][reg1]=0;   
+            }
+        }
+    }
 };
 
 int main(int argc, char** argv) {
-    /*mips m1;
+    mips m1;
     m1.readFile();
     m1.syntaxCheck();
+    //m1.addi(0,0);
+    /*int x=m1.bne(0,2);
+    cout<<x<<endl;*/
     for(int j = 0; j < m1.Instruction[0].size(); j++) {
         cout << m1.Instruction[0][j] << "|";
-    }*/
+    }
 }
