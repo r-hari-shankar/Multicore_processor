@@ -15,7 +15,7 @@ struct mips{
     vector<vector<string> > Instruction;              // stores all the instructions
     int N,M,rowDelay=10,columnDelay=2;               // number of cpu cores, max cycles, row delay and column delay
     string tempi[10]={"add","sub","mul","addi","j","beq","bne","slt","lw","sw"}; // all the valid instructions
-    vector<int[32]> registers;     // the 32 registers
+    vector<vector<int> > registers;     // the 32 registers
     int memory[1<<20] = {0};
     int MAX_INSTRUCTIONS_MEMORY = 1024*1024 - 1;
     vector <int> pc;
@@ -35,7 +35,7 @@ struct mips{
         // Initialize my mips processor
         for(int j=0;j<N;j++){
             unordered_map<string, int> countInstructions;
-            int reg[32] = {0};
+            vector<int> reg(32,0);
             for(int i=0;i<10;i++ ){
                 countInstructions[tempi[i]]=0;
             }
