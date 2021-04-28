@@ -40,6 +40,7 @@ struct mips{
 	    str.erase(0, str.find_first_not_of(chars));
 	    return str;
 	}
+	
 	void readFile()
 	{
 		
@@ -82,7 +83,12 @@ struct mips{
 						string token;
 						while (getline(ss,token, ' '))
 						{
-						    v.push_back(token);
+							if(token.compare("")==0){
+								continue;
+							}
+							else{
+						    	v.push_back(token);
+							}
 						}
 		            	
 		        	}
@@ -91,8 +97,9 @@ struct mips{
 		    in.close();
 		    Instruction.push_back(v);
 		}
-		/*for (auto it = Instruction[0].begin(); it != Instruction[0].end(); it++)
-        cout << *it << " ";*/
+		/*cout<<Instruction[0].size();
+		for (auto it = Instruction[0].begin(); it != Instruction[0].end(); it++)
+        cout << *it ;*/
 	}
 	bool isValidRegister(string str,bool modify){
 		if (getRegister.count(str) > 0)
