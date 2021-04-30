@@ -400,6 +400,79 @@ struct mips{
             return out;
         }
     }
+    vector<int> lw(int fileindex,int ind){
+        int reg1,addr;
+        string s1=Instruction[fileindex][ind+1],s=Instruction[fileindex][ind+2],reg2,offset;
+        reg1=getRegister[s1];
+        int h = 0;
+        while(s[h] != '(') {
+            h++;
+        }
+        if(h == 0) {
+            offset = "0";
+        } else if (h == s.size()) {
+            h = -1;
+            offset = "0";
+        } else {
+            for(int i = 0; i < h; i++) {
+                offset += s[i];
+            }
+        }
+        for(int i = h+1; i < s.size()-1; i++) {
+            reg2 += s[i];
+        }
+        if(h == -1) {
+            reg2 += s[s.size()-1];
+        }
+        int b=getRegister[reg2];
+        int addr = registers[fileindex][b]+stoi(offset);
+        if(not_safe(b,false)){
+            vector<int> out(4,-1);
+            return out;
+        }
+        else{
+            //need to add no of instructions
+            vector<int> out{reg1,addr,1};   //return {register addr,memory addr,boolean 1}
+            return out;
+        }
+    }
+    vector<int> sw(int fileindex,int ind){
+        int reg1,addr;
+        string s1=Instruction[fileindex][ind+1],s=Instruction[fileindex][ind+2],reg2,offset;
+        reg1=getRegister[s1];
+        int h = 0;
+        while(s[h] != '(') {
+            h++;
+        }
+        if(h == 0) {
+            offset = "0";
+        } else if (h == s.size()) {
+            h = -1;
+            offset = "0";
+        } else {
+            for(int i = 0; i < h; i++) {
+                offset += s[i];
+            }
+        }
+        for(int i = h+1; i < s.size()-1; i++) {
+            reg2 += s[i];
+        }
+        if(h == -1) {
+            reg2 += s[s.size()-1];
+        }
+        int b=getRegister[reg2];
+        int addr = registers[fileindex][b]+stoi(offset);
+        if(not_safe(reg1,false)){
+            vector<int> out(4,-1);
+            return out;
+        }
+        else{
+            //need to add no of instructions
+            vector<int> out{reg1,addr,0};   //return {register addr,memory addr,boolean 1}
+            return out;
+        }
+    }
+    
 };
 
 int main(int argc, char** argv) {
