@@ -19,7 +19,8 @@ struct mips{
     int memory[1<<20] = {0};
     int MAX_INSTRUCTIONS_MEMORY = 1024*1024 - 1;
     vector <int> pc;
-
+    unordered_set<int> involvedRegister;
+    vector<vector<int>> dramRequests;
 
 
     void getregister() // Initialize the register indexes
@@ -471,6 +472,34 @@ struct mips{
             vector<int> out{reg1,addr,0};   //return {register addr,memory addr,boolean 1}
             return out;
         }
+    }
+    void MRM(vector<int> v){
+        int row_addr=v[1]/1024;
+        if(v[2]==1){    //When a lw for same register is already in requests
+            for(int i=0;i<dramRequests.size();i++){
+                if(dramRequests[i][0]==v[0]){
+                    //A safe check might be required.
+                    dramRequests[i]=v;
+                    return;
+                }
+            }
+        }
+        else if(v[2]==0){    //When a sw for same memory is already in requests
+            for(int i=0;i<dramRequests.size();i++){
+                if(dramRequests[i][1]==v[1]){
+                    //A safe check might be required.
+                    dramRequests[i]=v;
+                    return;
+                }
+            }
+        }
+        for(int i = 1; i < dramRequests.size(); i++) {
+            if(dramRequests[i-1][1]/1024 == row_addr && dramRequests[i][1]/1024 != row_addr) {
+                dramRequests.insert(dramRequests.begin() + i, v);
+                return;
+            }
+        }
+
     }
     
 };
