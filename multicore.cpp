@@ -626,6 +626,94 @@ struct cpu {
     }
 };
 
+struct MRM {
+    vector<vector<int> > dramRequests;
+    //vector<vector<int> >;
+    vector<vector<int> > startInsertions;
+    vector<int> dram;
+    vector<vector<int> > pendingRequests;
+
+    int size = 12;
+    int currentRequests = 0;
+
+    int requestCounter = 0;
+    int detectCounter = 0;
+    bool flag = false;
+
+
+    int requestIssued() {
+        if(pendingRequests.size() > 0) {
+            vector<int> v = pendingRequests[0];
+            pendingRequests.erase(pendingRequests.begin());
+            int count = dramRequests.size();
+
+            if(count > requestCounter) {
+                requestCounter = count;
+            }
+            return 0;
+        }
+        return -1;
+    }
+
+    // v is expected to be {register index,memory address,boolean,number of instructions,core index}
+    // flag boolean is to mark that the requests that come in the same clock cycle cannot be given together to the request manager. 
+    // Hence added to a queue which will be executed later on.
+    int requestIssued(vector<int> v){
+        if(v.size() != 5) {
+            return -2;
+        }
+
+        if (flag || pendingRequests.size() > 0)
+        {
+            if(currentRequests >= size) {
+                return -1; // request is unsuccessful as the size is full
+            }
+            else {
+                pendingRequests.push_back(v);
+                currentRequests++;
+                return 0;
+            }
+        }
+        
+        int count = dramRequests.size();
+        bool shouldRemove = true;
+        int removalIndex = -1;
+        bool insertionDone = false;
+        int index = -1;
+
+        for(int i = 0; i < count; i++) {
+            if(dramRequests[i][4] == v[4]) {
+                if(v[2] == 1 && dramRequests[i][2] == v[2] && dramRequests[i][0] == v[0]) {
+                    dramRequests.erase(dramRequests.begin() + i--);
+                }
+            }
+            if(!insertionDone && dramRequests[i][1] == v[1] && dramRequests[i][3] > v[3]) {
+                index = i; insertionDone = true;
+            } else if(!insertionDone && i >= 1 && dramRequests[i-1][1] == v[1] && dramRequests[i][1] != v[1]) {
+                index = i; insertionDone = true;
+            } else if (!insertionDone && dramRequests[i-1][1]/1024 == v[1]/1024 && dramRequests[i][1]/1024 != v[1]/1024) {
+                index = i; insertionDone = true;
+            } else if(!insertionDone && dramRequests[i-1][1]/1024 != dramRequests[i][1]/1024 && v[3] > dramRequests[i][3]) {
+                index = i; insertionDone = true;
+            }
+
+            if(dramRequests)
+        }
+    }
+
+    void detectAddress(int a) {
+        for(int i = 0; i < dramRequests.size(); i++) {
+
+        }
+    }
+
+
+    void simulate() {
+
+    }
+
+};
+
 int main(int argc, char** argv) {
     /*mips m1;
     m1.readFile();
