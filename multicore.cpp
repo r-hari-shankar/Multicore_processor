@@ -85,10 +85,10 @@ struct cpu {
                 }
             }
             in.close();
-            
-            return syntaxCheck();
-            /*for (auto it = Instruction[0].begin(); it != Instruction[0].end(); it++)
+            /*for (auto it = Instruction.begin(); it != Instruction.end(); it++)
             cout << *it << " ";*/
+            return syntaxCheck();
+            
         }
         bool isValidRegister(string str,bool modify = false){
             // Check whether the register is valid for the given task or not
@@ -579,13 +579,146 @@ struct cpu {
     int maxCycles;
     int cycles = 0;
     
+    
+
+    //Memory request manager
+    struct MRM {
+        vector<vector<int> > dramRequests;
+        //vector<vector<int> >;
+        vector<vector<int> > startInsertions;
+        vector<int> dram = {-1};
+        vector<vector<int> > pendingRequests;
+
+        int size = 12;
+        int currentRequests = 0;
+
+        int requestCounter = 0;
+        int ramCounter = 0;
+        bool flag = false;
+
+        // v is expected to be {register index,memory address,boolean,number of instructions,core index}
+        int sendRequest(vector<int> v) {
+            // this function will be called by the cpu whe the cpu wants to pass a request.
+            // if returns -1, the cpu should stop the processing rightaway because the queue is full.
+            // if returns -2, te vector inserted is of wrong length/ expected length should be 5.
+            // 0 returned on successful insertion
+            if(v.size() != 5) {
+                return -2;
+            }
+            if(currentRequests >= size) {
+                return -1;
+            }
+            //cout<<"request sent"<<"\n";
+            pendingRequests.push_back(v); currentRequests++; return 0;
+        }
+
+        // Each clock cycle the MRM will pass the pending requests to the queue because only one instruction can be passed at a time to the vector.
+        int requestIssued(){
+            // This function is being called in every clock cycle b y the simulate function of mrm. It adds the next instruction to the queue.
+            // returns 0 on successful insertion.
+            //          ------------------------------------- THE IF CONDITIONS IN THIS FUNCTION REQUIRE VERIFICATION -----------------------------------------
+            if(pendingRequests.size() == 0) {
+                return 0;
+            }
+            vi v = pendingRequests[0];
+            
+            int count = dramRequests.size();
+            bool shouldRemove = true;
+            int removalIndex = -1;
+            bool insertionDone = false;
+            int index = -1;
+
+            for(int i = 0; i < count; i++) {
+                if(dramRequests[i][4] == v[4]) {
+                    if(v[2] == 1 && dramRequests[i][2] == v[2] && dramRequests[i][0] == v[0]) {
+                        removalIndex = i;
+                    }
+                }
+                if(!insertionDone && dramRequests[i][1] == v[1] && dramRequests[i][3] < v[3]) {
+                    index = i; insertionDone = true;
+                } else if(!insertionDone && i >= 1 && dramRequests[i-1][1] == v[1] && dramRequests[i][1] != v[1]) {
+                    index = i; insertionDone = true;
+                } else if (!insertionDone && dramRequests[i-1][1]/1024 == v[1]/1024 && dramRequests[i][1]/1024 != v[1]/1024) {
+                    index = i; insertionDone = true;
+                } else if(!insertionDone && dramRequests[i-1][1]/1024 != dramRequests[i][1]/1024 && v[3] > dramRequests[i][3]) {
+                    index = i; insertionDone = true;
+                }
+
+                if(dramRequests[i][2] == 0 && ((dramRequests[i][4] == v[4] && dramRequests[i][0] == v[0]) || dramRequests[i][1] == v[1]) ) {
+                    insertionDone = false;
+                    if(removalIndex != -1) {
+                        shouldRemove = false;
+                    }
+                }
+                
+            }
+            if(count > requestCounter) {
+                requestCounter = count;
+            }
+            if(!insertionDone) {
+                dramRequests.insert(dramRequests.end(), v);
+                return 0;
+            } else {
+                dramRequests.insert(dramRequests.begin() + index, v);
+                return 0;
+            }
+        }
+
+        int simulate() {
+            // This is the function that is required to be called by the cpu every clock cycle. 
+            // Loads any pending instructions on the queue. 
+            // if -1 is returned, then it means that nothing is loaded on the dram yet. The cpu may or may not proceed forward.
+            // if 0 is returned, it means that that the ram has completed its clock cycle successfully.
+            // If a number > 0 was returned. it means that the something was written in the register of (number-1)th core and the write operations in that core should be halted for one cycle.
+            int a = -1;
+            if(ramCounter == 0) {
+                if(dramRequests.size() == 0) {
+                    return 0;
+                }
+                if(requestCounter == 0) {
+                    currentRequests--;
+                    a = dram[4] + 1;
+                    vi next = dramRequests[0];
+                    dramRequests.erase(dramRequests.begin());
+                    if(next[1] == dram[1]) {
+                        ramCounter = 1;
+                    } else if (next[1]/1024 == dram[1]/1024) {
+                        ramCounter = 2;
+                    } else {
+                        if(dram[2] == 0) {
+                            ramCounter += 10;
+                        }
+                        ramCounter += 12;
+                    }
+                } else {
+                    requestIssued();
+                    requestCounter--;
+                    return a;
+                }
+            }
+            if (a == -1) {
+                a = 0;
+            }
+            ramCounter--;
+            requestIssued();
+            requestCounter--;
+            return a;
+        }
+    };
+    //MRM is initialized in cpu by the name manager
+    MRM manager;
     cpu() {
+        cout<<"Enter number of CPU cores"<<"\n";
         cin >> numCores;
+        cout<<"Enter Halt time"<<"\n";
         cin >> maxCycles;
+        cout<<"Enter MIPS files"<<"\n";
+        string files[numCores];
         
         for(int i = 0; i < numCores; i++) {
             core c;
-            c.readFile("t" + to_string(i+1) + ".txt");
+            cin>>files[i];
+            c.readFile(files[i]);
             cores.push_back(c);
         }
     }
@@ -601,12 +734,13 @@ struct cpu {
     
     void simulate() {
         bool flag = true;
+
         while(cycles < maxCycles && flag) {
             cycles++;
             cout << "cycle: " << cycles << endl;
             for(int i = 0; i < numCores; i++) {
                 vi result = cores[i].simulate();
-                
+                result.push_back(i);
                 if(determineResult(result) == -1) {
                     continue;
                 } else if (determineResult(result) == -2) {
@@ -614,6 +748,7 @@ struct cpu {
                     continue;
                 } else if (determineResult(result) == -3) {
                     // Insert the vector to ram
+                    manager.sendRequest(result);
                     instructionsExecuted++;
                     continue;
                 } else {
@@ -621,134 +756,20 @@ struct cpu {
                     break;
                 }
             }
+
+            int mrm_check=manager.simulate();
+            //checks using mrm_check value
+            
+            /*if(mrm_check>0){
+                cycles++;
+            }*/
+
         }
         cout << "done" << endl;
     }
 };
 
-struct MRM {
-    vector<vector<int> > dramRequests;
-    //vector<vector<int> >;
-    vector<vector<int> > startInsertions;
-    vector<int> dram = {-1};
-    vector<vector<int> > pendingRequests;
 
-    int size = 12;
-    int currentRequests = 0;
-
-    int requestCounter = 0;
-    int ramCounter = 0;
-    bool flag = false;
-
-    // v is expected to be {register index,memory address,boolean,number of instructions,core index}
-    int sendRequest(vector<int> v) {
-        // this function will be called by the cpu whe the cpu wants to pass a request.
-        // if returns -1, the cpu should stop the processing rightaway because the queue is full.
-        // if returns -2, te vector inserted is of wrong length/ expected length should be 5.
-        // 0 returned on successful insertion
-        if(v.size() != 5) {
-            return -2;
-        }
-        if(currentRequests >= size) {
-            return -1;
-        }
-        pendingRequests.push_back(v); currentRequests++; return 0;
-    }
-
-    // Each clock cycle the MRM will pass the pending requests to the queue because only one instruction can be passed at a time to the vector.
-    int requestIssued(){
-        // This function is being called in every clock cycle b y the simulate function of mrm. It adds the next instruction to the queue.
-        // returns 0 on successful insertion.
-        //          ------------------------------------- THE IF CONDITIONS IN THIS FUNCTION REQUIRE VERIFICATION -----------------------------------------
-        if(pendingRequests.size() == 0) {
-            return 0;
-        }
-        vi v = pendingRequests[0];
-        
-        int count = dramRequests.size();
-        bool shouldRemove = true;
-        int removalIndex = -1;
-        bool insertionDone = false;
-        int index = -1;
-
-        for(int i = 0; i < count; i++) {
-            if(dramRequests[i][4] == v[4]) {
-                if(v[2] == 1 && dramRequests[i][2] == v[2] && dramRequests[i][0] == v[0]) {
-                    removalIndex = i;
-                }
-            }
-            if(!insertionDone && dramRequests[i][1] == v[1] && dramRequests[i][3] < v[3]) {
-                index = i; insertionDone = true;
-            } else if(!insertionDone && i >= 1 && dramRequests[i-1][1] == v[1] && dramRequests[i][1] != v[1]) {
-                index = i; insertionDone = true;
-            } else if (!insertionDone && dramRequests[i-1][1]/1024 == v[1]/1024 && dramRequests[i][1]/1024 != v[1]/1024) {
-                index = i; insertionDone = true;
-            } else if(!insertionDone && dramRequests[i-1][1]/1024 != dramRequests[i][1]/1024 && v[3] > dramRequests[i][3]) {
-                index = i; insertionDone = true;
-            }
-
-            if(dramRequests[i][2] == 0 && ((dramRequests[i][4] == v[4] && dramRequests[i][0] == v[0]) || dramRequests[i][1] == v[1]) ) {
-                insertionDone = false;
-                if(removalIndex != -1) {
-                    shouldRemove = false;
-                }
-            }
-            
-        }
-        if(count > requestCounter) {
-            requestCounter = count;
-        }
-        if(!insertionDone) {
-            dramRequests.insert(dramRequests.end(), v);
-            return 0;
-        } else {
-            dramRequests.insert(dramRequests.begin() + index, v);
-            return 0;
-        }
-    }
-
-    int simulate() {
-        // This is the function that is required to be called by the cpu every clock cycle. 
-        // Loads any pending instructions on the queue. 
-        // if -1 is returned, then it means that nothing is loaded on the dram yet. The cpu may or may not proceed forward.
-        // if 0 is returned, it means that that the ram has completed its clock cycle successfully.
-        // If a number > 0 was returned. it means that the something was written in the register of (number-1)th core and the write operations in that core should be halted for one cycle.
-        int a = -1;
-        if(ramCounter == 0) {
-            if(dramRequests.size() == 0) {
-                return 0;
-            }
-            if(requestCounter == 0) {
-                currentRequests--;
-                a = dram[4] + 1;
-                vi next = dramRequests[0];
-                dramRequests.erase(dramRequests.begin());
-                if(next[1] == dram[1]) {
-                    ramCounter = 1;
-                } else if (next[1]/1024 == dram[1]/1024) {
-                    ramCounter = 2;
-                } else {
-                    if(dram[2] == 0) {
-                        ramCounter += 10;
-                    }
-                    ramCounter += 12;
-                }
-            } else {
-                requestIssued();
-                requestCounter--;
-                return a;
-            }
-        }
-        if (a == -1) {
-            a = 0;
-        }
-        ramCounter--;
-        requestIssued();
-        requestCounter--;
-        return a;
-    }
-
-};
 
 int main(int argc, char** argv) {
     /*mips m1;
