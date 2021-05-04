@@ -738,9 +738,17 @@ struct cpu {
         while(cycles < maxCycles && flag) {
             cycles++;
             cout << "cycle: " << cycles << endl;
+            int mrm_check=manager.simulate();
+
             for(int i = 0; i < numCores; i++) {
-                vi result = cores[i].simulate();
-                result.push_back(i);
+                vi result;
+                if(mrm_check<=0){
+                    result = cores[i].simulate();
+                    result.push_back(i);
+                }
+                else{
+                    continue;
+                }
                 if(determineResult(result) == -1) {
                     continue;
                 } else if (determineResult(result) == -2) {
@@ -748,21 +756,20 @@ struct cpu {
                     continue;
                 } else if (determineResult(result) == -3) {
                     // Insert the vector to ram
-                    manager.sendRequest(result);
+                    int check;
+                    check=manager.sendRequest(result);
+                    if(check==-1){
+                        while(manager.sendRequest(result)!=0 && cycles<maxCycles){
+                            cycles++;
+                        }
+                    }
                     instructionsExecuted++;
                     continue;
                 } else {
                     flag = false;
                     break;
                 }
-            }
-
-            int mrm_check=manager.simulate();
-            //checks using mrm_check value
-            
-            /*if(mrm_check>0){
-                cycles++;
-            }*/
+            } 
 
         }
         cout << "done" << endl;
