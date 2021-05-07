@@ -228,6 +228,7 @@ struct cpu {
         vector<int> add(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
+            cout << "add " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             reg3=getRegister[s3];
@@ -244,6 +245,7 @@ struct cpu {
         vector<int> sub(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
+            cout << "sub " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             reg3=getRegister[s3];
@@ -260,6 +262,7 @@ struct cpu {
         vector<int> mul(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
+            cout << "mul " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             reg3=getRegister[s3];
@@ -276,6 +279,7 @@ struct cpu {
         vector<int> addi(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
+            cout << "addi " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             reg3=stoi(s3);
@@ -292,6 +296,7 @@ struct cpu {
         vector<int> bne(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
+            cout << "bne " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             if(labels.find(s3)==labels.end()){
@@ -323,6 +328,7 @@ struct cpu {
         vector<int> beq(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
+            cout << "beq " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             if(labels.find(s3)==labels.end()){
@@ -353,6 +359,7 @@ struct cpu {
         vector<int> j(int ind){
             int ans = -2;
             string s1=Instruction[ind+1];
+            cout << "j " << s1;
             if(labels.find(s1)==labels.end()){
                 cout<<"Label not present"<<endl;
             }
@@ -366,6 +373,7 @@ struct cpu {
         vector<int> slt(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
+            cout << "slt " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             reg3=getRegister[s3];
@@ -387,6 +395,7 @@ struct cpu {
         vector<int> lw(int ind){
             int reg1,addr;
             string s1=Instruction[ind+1],s=Instruction[ind+2],reg2,offset;
+            cout << "lw " << s1 << "," << s;
             reg1=getRegister[s1];
             int h = 0;
             while(s[h] != '(') {
@@ -423,6 +432,7 @@ struct cpu {
         vector<int> sw(int ind){
             int reg1,addr;
             string s1=Instruction[ind+1],s=Instruction[ind+2],reg2,offset;
+            cout << "sw " << s1 << "," << s;
             reg1=getRegister[s1];
             int h = 0;
             while(s[h] != '(') {
@@ -620,6 +630,7 @@ struct cpu {
             if(pendingRequests.size() == 0) {
                 return 0;
             }
+
             vi v = pendingRequests[0];
             
             int count = dramRequests.size();
@@ -634,13 +645,15 @@ struct cpu {
                         removalIndex = i;
                     }
                 }
+                //cout << dramRequests[i].size() << endl;
+                //cout << v.size() << endl;
                 if(!insertionDone && dramRequests[i][1] == v[1] && dramRequests[i][3] < v[3]) {
                     index = i; insertionDone = true;
                 } else if(!insertionDone && i >= 1 && dramRequests[i-1][1] == v[1] && dramRequests[i][1] != v[1]) {
                     index = i; insertionDone = true;
-                } else if (!insertionDone && dramRequests[i-1][1]/1024 == v[1]/1024 && dramRequests[i][1]/1024 != v[1]/1024) {
+                } else if (!insertionDone && i >= 1 && dramRequests[i-1][1]/1024 == v[1]/1024 && dramRequests[i][1]/1024 != v[1]/1024) {
                     index = i; insertionDone = true;
-                } else if(!insertionDone && dramRequests[i-1][1]/1024 != dramRequests[i][1]/1024 && v[3] > dramRequests[i][3]) {
+                } else if(!insertionDone && i >= 1 && dramRequests[i-1][1]/1024 != dramRequests[i][1]/1024 && v[3] > dramRequests[i][3]) {
                     index = i; insertionDone = true;
                 }
 
@@ -650,7 +663,6 @@ struct cpu {
                         shouldRemove = false;
                     }
                 }
-                
             }
             if(count > requestCounter) {
                 requestCounter = count;
@@ -737,14 +749,16 @@ struct cpu {
 
         while(cycles < maxCycles && flag) {
             cycles++;
-            cout << "cycle: " << cycles <<endl;
+            cout << "cycle: " << cycles << endl;
             int mrm_check=manager.simulate();
 
             for(int i = 0; i < numCores; i++) {
                 vi result;
                 if(mrm_check<=0){
+                    cout << "Core " << i + 1 << ": ";
                     result = cores[i].simulate();
                     result.push_back(i);
+                    cout << endl;
                     //cout<<" "<<result[1]<<endl;
                 }
                 else{
