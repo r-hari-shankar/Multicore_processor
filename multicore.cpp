@@ -17,7 +17,6 @@ struct cpu {
         int rowDelay=10,columnDelay=2;               // number of cpu cores, max cycles, row delay and column delay
         string tempi[10]={"add","sub","mul","addi","j","beq","bne","slt","lw","sw"}; // all the valid instructions
         int registers[32] = {0};     // the 32 registers
-        int memory[1<<20] = {0};
         int MAX_INSTRUCTIONS_MEMORY = 1024*1024 - 1;
         int PC = 0;
         unordered_set<int> involvedRegisters;
@@ -46,7 +45,7 @@ struct cpu {
             str.erase(0, str.find_first_not_of(chars));
             return str;
         }
-        int readFile(string filename)
+        int readFile(string filename, int memory[])
         // reading the inputs in the required format and storing the instructions in vectors.
         {
             getregister();
@@ -87,11 +86,14 @@ struct cpu {
             in.close();
             /*for (auto it = Instruction.begin(); it != Instruction.end(); it++)
             cout << *it << " ";*/
-            return syntaxCheck();
+            return syntaxCheck(memory);
             
         }
         bool isValidRegister(string str,bool modify = false){
             // Check whether the register is valid for the given task or not
+            if(str == "") {
+                return true;
+            }
             if (getRegister.count(str) > 0)
             {
                 if(modify==true){
@@ -153,7 +155,7 @@ struct cpu {
             return false;
         }
 
-        int syntaxCheck() {
+        int syntaxCheck(int memory[]) {
             // Check the syntax of the instructions and load these instructions to the memory
             int j = 0;
             int n = Instruction.size();
@@ -193,16 +195,19 @@ struct cpu {
                 else if (Instruction[j] == "lw" || Instruction[j] == "sw") {
                     if (j+2 >= n) return -1;
                     if (!isValidRegister(Instruction[j+1]) ||
-                        !isValidRegister(offset(Instruction[j+2]).first)) return -1;
+                        !isValidRegister(offset(Instruction[j+2]).first)) {
+                            return -1;}
                     totalInstructions++;
                     memory[PC] = j;
                     j += 3;
                 }
                 else if (Instruction[j] == "addi") {
+                    cout << "yes" << endl;
                     if (j+3 >= n) return -1;
                     if (!isValidRegister(Instruction[j+1], true) ||
                         !isValidRegister(Instruction[j+2]) ||
-                        !isNumber(Instruction[j+3])) return -1;
+                        !isNumber(Instruction[j+3])) {
+                            return -1;}
                     totalInstructions++;
                     memory[PC] = j;
                     j += 4;
@@ -228,7 +233,6 @@ struct cpu {
         vector<int> add(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
-            cout << "add " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             reg3=getRegister[s3];
@@ -237,7 +241,9 @@ struct cpu {
                 return out;
             }
             else{
+            cout << "\t\tadd " << s1 << "," << s2 << "," << s3 << "---------->>>";
                 registers[reg1]=registers[reg2]+registers[reg3];
+                cout << s1 << " = " << registers[reg1];
                 vector<int> out(4,-2);  //return {-2,-2,-2,-2} when safe
                 return out;
             }
@@ -245,7 +251,6 @@ struct cpu {
         vector<int> sub(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
-            cout << "sub " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             reg3=getRegister[s3];
@@ -254,7 +259,9 @@ struct cpu {
                 return out;
             }
             else{
+            cout << "\t\tsub " << s1 << "," << s2 << "," << s3 << "---------->>>";
                 registers[reg1]=registers[reg2]-registers[reg3];
+                cout << s1 << " = " << registers[reg1];
                 vector<int> out(4,-2);
                 return out;
             }
@@ -262,7 +269,6 @@ struct cpu {
         vector<int> mul(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
-            cout << "mul " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             reg3=getRegister[s3];
@@ -271,7 +277,9 @@ struct cpu {
                 return out;
             }
             else{
+            cout << "\t\tmul " << s1 << "," << s2 << "," << s3 << "---------->>>";
                 registers[reg1]=registers[reg2]*registers[reg3];
+                cout << s1 << " = " << registers[reg1];
                 vector<int> out(4,-2);
                 return out;
             }
@@ -279,7 +287,6 @@ struct cpu {
         vector<int> addi(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
-            cout << "addi " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             reg3=stoi(s3);
@@ -288,7 +295,9 @@ struct cpu {
                 return out;
             }
             else{
+            cout << "\t\taddi " << s1 << "," << s2 << "," << s3 << "---------->>>";
                 registers[reg1]=registers[reg2]+reg3;
+                cout << s1 << " = " << registers[reg1];
                 vector<int> out(4,-2);
                 return out;
             }
@@ -296,7 +305,6 @@ struct cpu {
         vector<int> bne(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
-            cout << "bne " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             if(labels.find(s3)==labels.end()){
@@ -311,6 +319,7 @@ struct cpu {
                 return out;
             }
             else{
+            cout << "\t\tbne " << s1 << "," << s2 << "," << s3;
                 int a,b,ans;
                 a=registers[reg1];
                 b=registers[reg2];
@@ -328,7 +337,6 @@ struct cpu {
         vector<int> beq(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
-            cout << "beq " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             if(labels.find(s3)==labels.end()){
@@ -342,6 +350,7 @@ struct cpu {
                 return out;
             }
             else{
+            cout << "\t\tbeq " << s1 << "," << s2 << "," << s3;
                 int a,b,ans;
                 a=registers[reg1];
                 b=registers[reg2];
@@ -359,11 +368,11 @@ struct cpu {
         vector<int> j(int ind){
             int ans = -2;
             string s1=Instruction[ind+1];
-            cout << "j " << s1;
             if(labels.find(s1)==labels.end()){
                 cout<<"Label not present"<<endl;
             }
             else{
+            cout << "\t\tj " << s1;
                 ans=labels[s1];
             }
             vector<int> out(4,-2);
@@ -373,7 +382,6 @@ struct cpu {
         vector<int> slt(int ind){
             int reg1,reg2,reg3;
             string s1=Instruction[ind+1],s2=Instruction[ind+2],s3=Instruction[ind+3];
-            cout << "slt " << s1 << "," << s2 << "," << s3;
             reg1=getRegister[s1];
             reg2=getRegister[s2];
             reg3=getRegister[s3];
@@ -382,6 +390,7 @@ struct cpu {
                 return out;
             }
             else{
+            cout << "\t\tslt " << s1 << "," << s2 << "," << s3;
                 if(registers[reg2]<registers[reg3]){
                     registers[reg1]=1;
                 }
@@ -395,7 +404,6 @@ struct cpu {
         vector<int> lw(int ind){
             int reg1,addr;
             string s1=Instruction[ind+1],s=Instruction[ind+2],reg2,offset;
-            cout << "lw " << s1 << "," << s;
             reg1=getRegister[s1];
             int h = 0;
             while(s[h] != '(') {
@@ -419,20 +427,21 @@ struct cpu {
             }
             int b=getRegister[reg2];
             addr = registers[b]+stoi(offset);
-            if(not_safe(b,false)){
+            /*if(not_safe(b,false)){
                 vector<int> out(4,-1);
                 return out;
             }
-            else{
+            else{*/
+            cout << "\t\tlw " << s1 << "," << s;
                 //need to add no of instructions
+                involvedRegisters.insert(reg1);
                 vector<int> out{reg1,addr,1};   //return {register addr,memory addr,boolean 1}
                 return out;
-            }
+            //}
         }
         vector<int> sw(int ind){
             int reg1,addr;
             string s1=Instruction[ind+1],s=Instruction[ind+2],reg2,offset;
-            cout << "sw " << s1 << "," << s;
             reg1=getRegister[s1];
             int h = 0;
             while(s[h] != '(') {
@@ -461,6 +470,7 @@ struct cpu {
                 return out;
             }
             else{
+            cout << "\t\tsw " << s1 << "," << s;
                 //need to add no of instructions
                 vector<int> out{reg1,addr,0};   //return {register addr,memory addr,boolean 1}
                 return out;
@@ -588,7 +598,7 @@ struct cpu {
     int numCores;
     int maxCycles;
     int cycles = 0;
-    
+    int memory[1<<20] = {0};
     
 
     //Memory request manager
@@ -596,7 +606,7 @@ struct cpu {
         vector<vector<int> > dramRequests;
         //vector<vector<int> >;
         vector<vector<int> > startInsertions;
-        vector<int> dram = {-1};
+        vector<int> dram{-1,-1,-1,-1,-1};
         vector<vector<int> > pendingRequests;
 
         int size = 12;
@@ -605,6 +615,8 @@ struct cpu {
         int requestCounter = 0;
         int ramCounter = 0;
         bool flag = false;
+        bool dramActive = false;
+        bool shouldRightBack = false;
 
         // v is expected to be {register index,memory address,boolean,number of instructions,core index}
         int sendRequest(vector<int> v) {
@@ -612,7 +624,7 @@ struct cpu {
             // if returns -1, the cpu should stop the processing rightaway because the queue is full.
             // if returns -2, te vector inserted is of wrong length/ expected length should be 5.
             // 0 returned on successful insertion
-            if(v.size() != 5) {
+            if(v.size() < 5) {
                 return -2;
             }
             if(currentRequests >= size) {
@@ -630,14 +642,19 @@ struct cpu {
             if(pendingRequests.size() == 0) {
                 return 0;
             }
-
+            dramActive = true;
             vi v = pendingRequests[0];
+            pendingRequests.erase(pendingRequests.begin());
             
             int count = dramRequests.size();
             bool shouldRemove = true;
             int removalIndex = -1;
             bool insertionDone = false;
             int index = -1;
+
+            if(dram[1] == v[1] && dramRequests[0][1] != dram[1]) {
+                insertionDone = true; index = 0;
+            }
 
             for(int i = 0; i < count; i++) {
                 if(dramRequests[i][4] == v[4]) {
@@ -667,43 +684,75 @@ struct cpu {
             if(count > requestCounter) {
                 requestCounter = count;
             }
+            if(shouldRemove) {
+                if(removalIndex != -1) {
+                    dramRequests.erase(dramRequests.begin() + removalIndex);
+                }
+            }
             if(!insertionDone) {
                 dramRequests.insert(dramRequests.end(), v);
-                return 0;
             } else {
                 dramRequests.insert(dramRequests.begin() + index, v);
-                return 0;
             }
+            if(shouldRemove) {
+                if(dram[4] == v[4] && v[2] == 1 && dram[2] == 1 && dram[0] == v[0]) {
+                    cout << "\tUpdating the dram with new request, redundant code found!" << endl;
+                    currentRequests--;
+                    vi next = dramRequests[0];
+                    dramRequests.erase(dramRequests.begin());
+                    if(dram[1] != -1 && next[1] == dram[1]) {
+                        if(ramCounter <= 1) ramCounter = 1;
+                    } else if (dram[1] != -1 && next[1]/1024 == dram[1]/1024) {
+                        if(ramCounter < 2) {
+                            ramCounter = 2;
+                        }
+                    } else {
+                        shouldRightBack = true;
+                        ramCounter = 12;
+                    }
+                    dram = next;
+                }
+            }
+            return 0;
         }
 
-        int simulate() {
+        int simulate(vector<core>* cores, int memory[]) {
             // This is the function that is required to be called by the cpu every clock cycle. 
             // Loads any pending instructions on the queue. 
             // if -1 is returned, then it means that nothing is loaded on the dram yet. The cpu may or may not proceed forward.
             // if 0 is returned, it means that that the ram has completed its clock cycle successfully.
             // If a number > 0 was returned. it means that the something was written in the register of (number-1)th core and the write operations in that core should be halted for one cycle.
             int a = -1;
+            if(!dramActive) {
+                return 0;
+            }
             if(ramCounter == 0) {
+                editCore(cores, memory);
                 if(dramRequests.size() == 0) {
+                    dramActive = false;
                     return 0;
                 }
-                if(requestCounter == 0) {
+                if(requestCounter <= 0) {
                     currentRequests--;
                     a = dram[4] + 1;
                     vi next = dramRequests[0];
+                    //cout << "I am here with a: " << a << endl;
                     dramRequests.erase(dramRequests.begin());
-                    if(next[1] == dram[1]) {
+                    if(dram[1] != -1 && next[1] == dram[1]) {
+                        shouldRightBack = (dram[2] == 0 || shouldRightBack);
                         ramCounter = 1;
-                    } else if (next[1]/1024 == dram[1]/1024) {
+                    } else if (dram[1] != -1 && next[1]/1024 == dram[1]/1024) {
+                        shouldRightBack = (dram[2] == 0 || shouldRightBack);
                         ramCounter = 2;
                     } else {
-                        if(dram[2] == 0) {
+                        if(dram[2] == 0 || shouldRightBack) {
+                            shouldRightBack = false;
                             ramCounter += 10;
                         }
                         ramCounter += 12;
                     }
+                    dram = next;
                 } else {
-                    requestIssued();
                     requestCounter--;
                     return a;
                 }
@@ -712,10 +761,28 @@ struct cpu {
                 a = 0;
             }
             ramCounter--;
-            requestIssued();
             requestCounter--;
             return a;
         }
+
+        void editCore(vector<core>* cores, int memory[]) {
+            int coreIndex = dram[4];
+            if(coreIndex == -1) {
+                return;
+            }
+
+            if(dram[2]) {
+                (*cores)[coreIndex].registers[dram[0]] = memory[dram[1]];
+
+                (*cores)[coreIndex].involvedRegisters.erase(dram[0]);
+
+                cout << "\tExecuted: regIndex " << dram[0] << " = " << memory[dram[1]] << endl;
+            } else {
+                memory[dram[1]] = dram[5];
+                cout << "\tExecuted: value at memory Address " << dram[1] << " = " << dram[5];
+            }
+        }
+
     };
     //MRM is initialized in cpu by the name manager
     MRM manager;
@@ -730,7 +797,7 @@ struct cpu {
         for(int i = 0; i < numCores; i++) {
             core c;
             cin>>files[i];
-            c.readFile(files[i]);
+            c.readFile(files[i], memory);
             cores.push_back(c);
         }
     }
@@ -746,25 +813,30 @@ struct cpu {
     
     void simulate() {
         bool flag = true;
-
-        while(cycles < maxCycles && flag) {
+        cout << cores[0].totalInstructions << endl;
+        while(cycles < maxCycles && (flag || manager.dramActive)) {
             cycles++;
             cout << "cycle: " << cycles << endl;
-            int mrm_check=manager.simulate();
+            int mrm_check=manager.simulate(&cores, memory);
 
             for(int i = 0; i < numCores; i++) {
                 vi result;
                 if(mrm_check<=0){
-                    cout << "Core " << i + 1 << ": ";
+                    cout << "\tCore " << i + 1 << ": " << endl;
                     result = cores[i].simulate();
                     result.push_back(i);
+                    if(result[2] == 0) {
+                        result.push_back(cores[i].registers[result[0]]);
+                    }
                     cout << endl;
                     //cout<<" "<<result[1]<<endl;
                 }
                 else{
+                    cout << "\tCore " << i + 1 << ": Paused for one cycle for writing in register by DRAM" << endl;
                     continue;
                 }
                 if(determineResult(result) == -1) {
+                    cout << "\t\t Not safe to execute instructions, waiting for DRAM to respond!" << endl;
                     continue;
                 } else if (determineResult(result) == -2) {
                     instructionsExecuted++;
@@ -773,9 +845,11 @@ struct cpu {
                     // Insert the vector to ram
                     int check,check1;
                     check=manager.sendRequest(result);
-                    check1=manager.requestIssued();
-                    if(check1==0){
-                        cout<<"DRAM request issued"<<endl;
+                    manager.requestIssued();
+                    if(check==0){
+                        cout<<"\t\tDRAM request issued"<<endl;
+                    } else {
+                        cout << "\t\t DRAM Full!, Cannot send the request to DRAM." << endl;
                     }
                     /*if(check==-1){
                         while(manager.sendRequest(result)!=0 && cycles<maxCycles){
