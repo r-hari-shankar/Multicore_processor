@@ -608,6 +608,7 @@ struct cpu {
         vector<vector<int> > startInsertions;
         vector<int> dram{-1,-1,-1,-1,-1};
         vector<vector<int> > pendingRequests;
+        //vector<vector<int> > overflowRequests;        
 
         int size = 12;
         int currentRequests = 0;
@@ -628,6 +629,7 @@ struct cpu {
                 return -2;
             }
             if(currentRequests >= size) {
+                //overflowRequests.push_back(v);
                 return -1;
             }
             //cout<<"request sent"<<"\n";
@@ -810,7 +812,10 @@ struct cpu {
         if(a[2] == -2) return a[1];
         else return -3;
     }
-    
+    /*void halt(vector<int> v){
+
+    }*/
+
     void simulate() {
         bool flag = true;
         cout << cores[0].totalInstructions << endl;
@@ -845,17 +850,52 @@ struct cpu {
                     // Insert the vector to ram
                     int check,check1;
                     check=manager.sendRequest(result);
-                    manager.requestIssued();
                     if(check==0){
+                        manager.requestIssued();
                         cout<<"\t\tDRAM request issued"<<endl;
-                    } else {
+                    } else if(check==-1){
                         cout << "\t\t DRAM Full!, Cannot send the request to DRAM." << endl;
+                        int chk[numCores]={0};
+                        while(check!=0 && cycles<maxCycles){
+                            cycles++;
+                            cout << "cycle: " << cycles << endl;
+                            int mrm_check1=manager.simulate(&cores, memory);
+                            for(int j=0;j<numCores && chk[j]!=1;j++){
+                                vi res;
+                                if(mrm_check1<=0){
+                                    cout << "\tCore " << j + 1 << ": " << endl;
+                                    res = cores[j].simulate();
+                                    res.push_back(j);
+                                    if(res[2] == 0) {
+                                        res.push_back(cores[j].registers[res[0]]);
+                                    }
+                                    cout << endl;
+                                }
+                                else{
+                                    cout << "\tCore " << j + 1 << ": Paused for one cycle for writing in register by DRAM" << endl;
+                                    continue;
+                                }
+                                if(determineResult(res) == -1) {
+                                    cout << "\t\t Not safe to execute instructions, waiting for DRAM to respond!" << endl;
+                                    continue;
+                                } else if (determineResult(res) == -2) {
+                                    instructionsExecuted++;
+                                    continue;
+                                }
+                                else if (determineResult(res) == -3) {
+                                    chk[j]=1;
+                                    continue;
+                                }
+                            }
+                            check=manager.sendRequest(result);
+                        }
+                        manager.requestIssued();
                     }
                     /*if(check==-1){
                         while(manager.sendRequest(result)!=0 && cycles<maxCycles){
                             cycles++;
                         }
-                    }**/
+                    }*/
                     instructionsExecuted++;
                     continue;
                 } else {
