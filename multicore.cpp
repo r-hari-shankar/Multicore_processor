@@ -16,6 +16,7 @@ struct cpu {
         vector<string> Instruction;              // stores all the instructions
         int rowDelay=10,columnDelay=2;               // number of cpu cores, max cycles, row delay and column delay
         string tempi[10]={"add","sub","mul","addi","j","beq","bne","slt","lw","sw"}; // all the valid instructions
+        string temp[32]={"$zero","$at","$v0","$v1","$a0","$a1","$a2","$a3","$t0","$t1","$t2","$t3","$t4","$t5","$t6","$t7","$s0","$s1","$s2","$s3","$s4","$s5","$s6","$s7","$t8","$t9","$k0","$k1","$gp","$sp","$s8","$ra"};
         int registers[32] = {0};     // the 32 registers
         int MAX_INSTRUCTIONS_MEMORY = 1024*1024 - 1;
         int PC = 0;
@@ -26,7 +27,7 @@ struct cpu {
 
         void getregister() // Initialize the register indexes
         {
-            string temp[]={"$zero","$at","$v0","$v1","$a0","$a1","$a2","$a3","$t0","$t1","$t2","$t3","$t4","$t5","$t6","$t7","$s0","$s1","$s2","$s3","$s4","$s5","$s6","$s7","$t8","$t9","$k0","$k1","$gp","$sp","$s8","$ra"};
+            
             for(int i=0;i<32;i++)
             {
                 getRegister[temp[i]]=i;
@@ -427,17 +428,17 @@ struct cpu {
             }
             int b=getRegister[reg2];
             addr = registers[b]+stoi(offset);
-            /*if(not_safe(b,false)){
+            if(not_safe(b,false)){
                 vector<int> out(4,-1);
                 return out;
             }
-            else{*/
+            else{
             cout << "\t\tlw " << s1 << "," << s;
                 //need to add no of instructions
                 involvedRegisters.insert(reg1);
                 vector<int> out{reg1,addr,1};   //return {register addr,memory addr,boolean 1}
                 return out;
-            //}
+            }
         }
         vector<int> sw(int ind){
             int reg1,addr;
@@ -773,7 +774,7 @@ struct cpu {
                 return;
             }
 
-            if(dram[2]) {
+            if(dram[2]==1) {
                 (*cores)[coreIndex].registers[dram[0]] = memory[dram[1]];
 
                 (*cores)[coreIndex].involvedRegisters.erase(dram[0]);
@@ -905,6 +906,13 @@ struct cpu {
 
             } 
 
+        }
+        for(int i=0;i<numCores;i++){
+            cout<<"core "<<i+1<<":"<<endl;
+            for(int j=0;j<32;j++){
+                cout<<cores[i].temp[j]<<" -> "<<cores[i].registers[j]<<" :: ";
+            }
+            cout<<endl;
         }
         cout << "done" << endl;
     }
