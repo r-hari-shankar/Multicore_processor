@@ -227,6 +227,7 @@ struct cpu {
                     if (isNumber(s)) return -1;
                     if (labels.find(s) != labels.end()) return -1;
                     labels.insert({s, PC});
+                    cout<<s<<endl;
                 }
             }
             return 0;
@@ -428,18 +429,17 @@ struct cpu {
             }
             int b=getRegister[reg2];
             addr = registers[b]+stoi(offset);
-            /*if(not_safe(b,false)){
+            if(not_safe(b,false)){
                 vector<int> out(4,-1);
                 return out;
             }
-            else{*/
             else{
             cout << "\t\tlw " << s1 << "," << s;
                 //need to add no of instructions
                 involvedRegisters.insert(reg1);
                 vector<int> out{reg1,addr,1};   //return {register addr,memory addr,boolean 1}
                 return out;
-            //}
+            }
         }
         vector<int> sw(int ind){
             int reg1,addr;
@@ -590,10 +590,7 @@ struct cpu {
                 instr_sz = 4;
                 countOfInstructions["addi"]++;
             }
-            else {
-                i += 1;
-                return simulate();
-            }
+            else i += 1;
             currentinstruction++;
             return v;
         }
@@ -734,18 +731,6 @@ struct cpu {
                 return 0;
             }
             if(ramCounter == 0) {
-                cout << "-----------------------------------------------------------" << endl;
-                for (int i = 0; i < dramRequests.size(); i++) {
-                    for(int j = 0; j < dramRequests[i].size(); j++) {
-                        cout << dramRequests[i][j] << " ";
-                    }
-                    cout << endl;
-                }
-                cout << "-----------------------------------------------------------" << endl;
-                editCore(cores, memory);
-                if(dramRequests.size() == 0) {
-                    dramActive = false;
-                    dram[4] = -1;
                 editCore(cores, memory);
                 if(dramRequests.size() == 0) {
                     dramActive = false;
@@ -790,22 +775,11 @@ struct cpu {
                 return;
             }
 
-            if(dram[2]) {
             if(dram[2]==1) {
                 (*cores)[coreIndex].registers[dram[0]] = memory[dram[1]];
 
                 (*cores)[coreIndex].involvedRegisters.erase(dram[0]);
 
-                /*cout << "----------------------------------------------------------" << endl;
-                for (int i = 0; i < dram.size(); i++) {
-                    cout << dram[i] << " , " << endl;
-                }
-                cout << "----------------------------------------------------------" << endl;*/
-
-                cout << "\tExecuted: regIndex " << dram[0] << " = " << memory[dram[1]] << endl;
-            } else {
-                memory[dram[1]] = dram[5];
-                cout << "\tExecuted: value at memory Address " << dram[1] << " = " << dram[5] << endl;
                 cout << "\tExecuted: regIndex " << dram[0] << " = " << memory[dram[1]] << endl;
             } else {
                 memory[dram[1]] = dram[5];
@@ -878,11 +852,6 @@ struct cpu {
                     // Insert the vector to ram
                     int check,check1;
                     check=manager.sendRequest(result);
-                    manager.requestIssued();
-                    if(check==0){
-                        cout<<"\t\tDRAM request issued"<<endl;
-                    } else {
-                        cout << "\t\t DRAM Full!, Cannot send the request to DRAM." << endl;
                     if(check==0){
                         manager.requestIssued();
                         cout<<"\t\tDRAM request issued"<<endl;
